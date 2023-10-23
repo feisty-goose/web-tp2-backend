@@ -36,6 +36,41 @@ app.get("/getAllEvents", (req, res) => {
   });
 });
 
+app.delete("/deleteEvent", (req, res) => {
+  console.log(req.body);
+  let id = req.body.id;
+
+  if (id === undefined) return;
+
+  con.query("DELETE FROM events WHERE id = ?;", [id], function (err, result) {
+    if (err) throw err;
+  });
+});
+
+app.post("/addEvent", (req, res) => {
+  console.log(req.body);
+  let name = req.body.name;
+  let date = req.body.date;
+  let userId = req.body.userId;
+
+  if (name === undefined) return;
+  if (date === undefined) return;
+  if (userId === undefined) return;
+
+  con.query(
+    "INSERT INTO events (name, date, user_Id) VALUES ( ?, ?, ? );",
+    [name, date, userId],
+    function (err, result, fields) {
+      if (!err) {
+        result = result.affectedRows > 0 ? "Success" : "Failure";
+        res.json({ response: result });
+      } else {
+        throw err;
+      }
+    }
+  );
+});
+
 app.get("/getAllUsers", (req, res) => {
   con.query("SELECT * FROM users", function (err, result, fields) {
     if (err) {
