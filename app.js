@@ -1,9 +1,38 @@
 const express = require("express");
 const app = express();
 var mysql = require("mysql");
+const cors = require("cors");
+
+const cookieParser = require("cookie-parser");
+const session = require("express-session");
+
+const bcrypt = require("bcrypt");
+const saltRounds = 10;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(
+  cors({
+    origin: ["http://localhost:3000"],
+    methods: ["GET", "POST", "DELETE"],
+    credentials: true,
+  })
+);
+app.use(cookieParser());
+
+app.use(
+  session({
+    // initialise la session
+    key: "userId", // nom du cookie
+    secret: "subscribe", // utilisé pour hasché l'id de session
+    resave: true, // a vous de trouver l'utilité
+    saveUninitialized: false, //a vous de trouver l'utilité
+    cookie: {
+      //
+      expires: 60 * 60 * 24, // 24 heures
+    },
+  })
+);
 
 var con = mysql.createConnection({
   host: "mysql-20063c0d-etudiant-5326.aivencloud.com",
@@ -13,9 +42,15 @@ var con = mysql.createConnection({
   port: 15397,
 });
 
-// TODO: Implement hashing and salting algorithm
 function hashAndSalt(rawTextPassword) {
-  return rawTextPassword;
+  bcrypt.hash(rawTextPassword, saltRounds, (err, hash) => {
+    if (err) {
+      console.log(err);
+    }
+    return hash;
+  });
+
+  return undefined;
 }
 
 con.connect(function (err) {
@@ -102,6 +137,44 @@ app.post("/signUp", (req, res) => {
         res.json({ response: "User already exists" });
       } else {
         throw err;
+      }
+    }
+  );
+});
+
+app.get("/logIn", (req, res) => {
+  if (req.session.user) {
+    res.send({ loggedIn: true, user: req.session.user });
+  } else {
+    res.send({ loggedIn: false });
+  }
+});
+
+app.post("/logIn", (req, res) => {
+  const username = req.body.username;
+  const password = req.body.password;
+
+  con.query(
+    "SELECT * FROM users WHERE name = ?;",
+    [username],
+    function (err, result, fields) {
+      if (err) {
+        throw err;
+      } else {
+        res.json({ response: result });
+      }
+
+      if (result.length > 0) {
+        bcrypt.compare(password, result[0].password, (err, response) => {
+          if (response) {
+            req.session.user = result;
+            res.send(result);
+          } else {
+            res.send({ message: "Wrong username/password combination!" });
+          }
+        });
+      } else {
+        res.send({ message: "User doesn't exist" });
       }
     }
   );
