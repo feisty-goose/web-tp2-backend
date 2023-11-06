@@ -28,7 +28,6 @@ app.use(
     resave: true, // a vous de trouver l'utilité
     saveUninitialized: false, //a vous de trouver l'utilité
     cookie: {
-      //
       expires: 60 * 60 * 24, // 24 heures
     },
   })
@@ -43,14 +42,15 @@ var con = mysql.createConnection({
 });
 
 function hashAndSalt(rawTextPassword) {
+  let hashedPass;
   bcrypt.hash(rawTextPassword, saltRounds, (err, hash) => {
     if (err) {
       console.log(err);
     }
-    return hash;
+    hashedPass = hash;
   });
 
-  return undefined;
+  return hashedPass;
 }
 
 con.connect(function (err) {
@@ -72,7 +72,6 @@ app.get("/getAllEvents", (req, res) => {
 });
 
 app.delete("/deleteEvent", (req, res) => {
-  console.log(req.body);
   let id = req.body.id;
 
   if (id === undefined) return;
@@ -88,7 +87,6 @@ app.delete("/deleteEvent", (req, res) => {
 });
 
 app.post("/addEvent", (req, res) => {
-  console.log(req.body);
   let name = req.body.name;
   let date = req.body.date;
   let userId = req.body.userId;
@@ -104,7 +102,6 @@ app.post("/addEvent", (req, res) => {
       if (!err) {
         result = result.affectedRows > 0 ? "Success" : "Failure";
         res.json({ response: result });
-        console.log(res.result);
       } else {
         throw err;
       }
@@ -123,7 +120,6 @@ app.get("/getAllUsers", (req, res) => {
 });
 
 app.post("/signUp", (req, res) => {
-  console.log(req.body); // ?
   let name = req.body.name;
   let password = req.body.rawPassword;
 
@@ -171,8 +167,12 @@ app.post("/logIn", (req, res) => {
       }
 
       if (result.length > 0) {
-        bcrypt.compare(password, result[0].password, (err, response) => {
-          if (response) {
+        bcrypt.compare(password, result[0].password, (err, compareResult) => {
+          if (err) {
+            console.log("err", err);
+            return;
+          }
+          if (compareResult) {
             req.session.user = result;
             res.send(result);
           } else {
