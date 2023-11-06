@@ -78,7 +78,12 @@ app.delete("/deleteEvent", (req, res) => {
   if (id === undefined) return;
 
   con.query("DELETE FROM events WHERE id = ?;", [id], function (err, result) {
-    if (err) throw err;
+    if (err) {
+        throw err
+    } else {
+        result = result.affectedRows > 0 ? "Success" : "Failure";
+        res.json({ response: result });
+    };
   });
 });
 
