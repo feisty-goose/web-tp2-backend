@@ -79,11 +79,11 @@ app.delete("/deleteEvent", (req, res) => {
 
   con.query("DELETE FROM events WHERE id = ?;", [id], function (err, result) {
     if (err) {
-        throw err
+      throw err;
     } else {
-        result = result.affectedRows > 0 ? "Success" : "Failure";
-        res.json({ response: result });
-    };
+      result = result.affectedRows > 0 ? "Success" : "Failure";
+      res.json({ response: result });
+    }
   });
 });
 
@@ -104,6 +104,7 @@ app.post("/addEvent", (req, res) => {
       if (!err) {
         result = result.affectedRows > 0 ? "Success" : "Failure";
         res.json({ response: result });
+        console.log(res.result);
       } else {
         throw err;
       }
