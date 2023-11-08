@@ -41,16 +41,11 @@ var con = mysql.createConnection({
   port: 15397,
 });
 
-function hashAndSalt(rawTextPassword) {
-  let hashedPass;
-  bcrypt.hash(rawTextPassword, saltRounds, (err, hash) => {
-    if (err) {
-      console.log(err);
-    }
-    hashedPass = hash;
-  });
+async function hashAndSalt(rawTextPassword) {
+  let salt = await bcrypt.genSalt(10);
+  let hashed = await bcrypt.hash(rawTextPassword, salt);
 
-  return hashedPass;
+  return hashed;
 }
 
 con.connect(function (err) {
@@ -119,14 +114,14 @@ app.get("/getAllUsers", (req, res) => {
   });
 });
 
-app.post("/signUp", (req, res) => {
+app.post("/signUp", async (req, res) => {
   let name = req.body.name;
   let password = req.body.rawPassword;
 
   if (name === undefined) return;
   if (password === undefined) return;
 
-  password = hashAndSalt(password);
+  password = await hashAndSalt(password);
 
   con.query(
     "INSERT INTO users (name, password) VALUES ( ?, ? );",
