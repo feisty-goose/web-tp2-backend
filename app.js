@@ -73,7 +73,7 @@ app.delete("/deleteEvent", (req, res) => {
   });
 });
 
-app.post("/addEvent", (req, res) => {
+app.post("/addEvent", async (req, res) => {
   let name = req.body.name;
   let date = req.body.date;
   let userId = req.body.userId;
@@ -143,6 +143,7 @@ app.get("/logIn", (req, res) => {
 });
 
 app.post("/logIn", (req, res) => {
+  console.log("enter login post");
   const username = req.body.username;
   const password = req.body.password;
 
@@ -163,12 +164,14 @@ app.post("/logIn", (req, res) => {
           }
           if (compareResult) {
             req.session.user = result;
+            console.log("result", result);
             res.send(result);
           } else {
             res.send({ message: "Wrong username/password combination!" });
           }
         });
       } else {
+        console.log("User doesn't exist");
         res.send({ message: "User doesn't exist" });
       }
     }
