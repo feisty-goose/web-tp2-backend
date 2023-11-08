@@ -7,7 +7,6 @@ const cookieParser = require("cookie-parser");
 const session = require("express-session");
 
 const bcrypt = require("bcrypt");
-const saltRounds = 10;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -40,13 +39,6 @@ var con = mysql.createConnection({
   database: "defaultdb",
   port: 15397,
 });
-
-async function hashAndSalt(rawTextPassword) {
-  let salt = await bcrypt.genSalt(10);
-  let hashed = await bcrypt.hash(rawTextPassword, salt);
-
-  return hashed;
-}
 
 con.connect(function (err) {
   if (err) {
@@ -115,13 +107,16 @@ app.get("/getAllUsers", (req, res) => {
 });
 
 app.post("/signUp", async (req, res) => {
+  console.log("back end sign up", req.body);
   let name = req.body.name;
   let password = req.body.rawPassword;
 
   if (name === undefined) return;
   if (password === undefined) return;
 
-  password = await hashAndSalt(password);
+  let salt = await bcrypt.genSalt(10);
+  password = await bcrypt.hash(password, salt);
+  console.log(password);
 
   con.query(
     "INSERT INTO users (name, password) VALUES ( ?, ? );",
@@ -158,7 +153,6 @@ app.post("/logIn", (req, res) => {
       if (err) {
         throw err;
       } else {
-        res.json({ response: result });
       }
 
       if (result.length > 0) {
