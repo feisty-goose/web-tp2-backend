@@ -142,6 +142,7 @@ app.get("/login", (req, res) => {
 app.post("/logIn", (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
+  console.log(username + " " + password);
 
   con.query(
     "SELECT * FROM users WHERE name = ?;",
@@ -172,6 +173,18 @@ app.post("/logIn", (req, res) => {
       }
     }
   );
+});
+
+app.post("/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("Error destroying session:", err);
+      res.sendStatus(500);
+    } else {
+      res.clearCookie("userId");
+      res.sendStatus(200);
+    }
+  });
 });
 
 module.exports = app;
