@@ -19,12 +19,15 @@ app.use(
 );
 app.use(cookieParser());
 
+const bodyParser = require("body-parser");
+app.use(bodyParser.json());
+
 app.use(
   session({
     // initialise la session
     key: "userId", // nom du cookie
     secret: "subscribe", // utilisé pour hasché l'id de session
-    resave: true, // a vous de trouver l'utilité
+    resave: false, // a vous de trouver l'utilité
     saveUninitialized: false, //a vous de trouver l'utilité
     cookie: {
       expires: 60 * 60 * 24, // 24 heures
@@ -49,13 +52,19 @@ con.connect(function (err) {
 });
 
 app.get("/getAllEvents", (req, res) => {
-  con.query("SELECT * FROM events", function (err, result, fields) {
-    if (err) {
-      throw err;
-    } else {
-      res.json({ response: result });
+  const userId = req.body.userId;
+
+  con.query(
+    "SELECT * FROM events WHERE user_id = ?;",
+    [userId],
+    function (err, result, fields) {
+      if (err) {
+        throw err;
+      } else {
+        res.json({ response: result });
+      }
     }
-  });
+  );
 });
 
 app.delete("/deleteEvent", (req, res) => {
@@ -83,7 +92,7 @@ app.post("/addEvent", async (req, res) => {
   if (userId === undefined) return;
 
   con.query(
-    "INSERT INTO events (name, date, user_Id) VALUES ( ?, ?, ? );",
+    "INSERT INTO events (name, date, user_id) VALUES ( ?, ?, ? );",
     [name, date, userId],
     function (err, result, fields) {
       if (!err) {
@@ -96,18 +105,7 @@ app.post("/addEvent", async (req, res) => {
   );
 });
 
-app.get("/getAllUsers", (req, res) => {
-  con.query("SELECT * FROM users", function (err, result, fields) {
-    if (err) {
-      throw err;
-    } else {
-      res.json({ response: result });
-    }
-  });
-});
-
 app.post("/signUp", async (req, res) => {
-  console.log("back end sign up", req.body);
   let name = req.body.name;
   let password = req.body.rawPassword;
 
@@ -116,7 +114,6 @@ app.post("/signUp", async (req, res) => {
 
   let salt = await bcrypt.genSalt(10);
   password = await bcrypt.hash(password, salt);
-  console.log(password);
 
   con.query(
     "INSERT INTO users (name, password) VALUES ( ?, ? );",
@@ -134,7 +131,7 @@ app.post("/signUp", async (req, res) => {
   );
 });
 
-app.get("/logIn", (req, res) => {
+app.get("/login", (req, res) => {
   if (req.session.user) {
     res.send({ loggedIn: true, user: req.session.user });
   } else {
@@ -143,7 +140,6 @@ app.get("/logIn", (req, res) => {
 });
 
 app.post("/logIn", (req, res) => {
-  console.log("enter login post");
   const username = req.body.username;
   const password = req.body.password;
 
@@ -163,6 +159,7 @@ app.post("/logIn", (req, res) => {
             return;
           }
           if (compareResult) {
+            console.log(req.session);
             req.session.user = result;
             console.log("result", result);
             res.send(result);
@@ -171,7 +168,6 @@ app.post("/logIn", (req, res) => {
           }
         });
       } else {
-        console.log("User doesn't exist");
         res.send({ message: "User doesn't exist" });
       }
     }
