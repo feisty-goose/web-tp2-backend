@@ -54,7 +54,7 @@ con.connect(function (err) {
 app.get("/getStats", (req, res) => {
   let stats = [0, 0];
 
-  con.query("SELECT COUNT(1) FROM events", function (err, result, fields) {
+  con.query("SELECT COUNT(1) FROM users", function (err, result, fields) {
     if (err) {
       throw err;
     } else {
@@ -62,7 +62,7 @@ app.get("/getStats", (req, res) => {
     }
   });
 
-  con.query("SELECT COUNT(1) FROM users", function (err, result, fields) {
+  con.query("SELECT COUNT(1) FROM events", function (err, result, fields) {
     if (err) {
       throw err;
     } else {
