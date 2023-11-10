@@ -54,23 +54,22 @@ con.connect(function (err) {
 app.get("/getStats", (req, res) => {
   let stats = [0, 0];
 
-  con.query("SELECT COUNT(*) FROM events", function (err, result, fields) {
+  con.query("SELECT COUNT(1) FROM events", function (err, result, fields) {
     if (err) {
       throw err;
     } else {
-      stats[0] = result;
+      stats = [result[0]["COUNT(1)"], 0];
     }
   });
 
-  con.query("SELECT COUNT(*) FROM users", function (err, result, fields) {
+  con.query("SELECT COUNT(1) FROM users", function (err, result, fields) {
     if (err) {
       throw err;
     } else {
-      stats[1] = result;
+      stats = [stats[0], result[0]["COUNT(1)"]];
+      res.json(stats);
     }
   });
-
-  res.json({ response: stats });
 });
 
 app.get("/getAllEvents", (req, res) => {
