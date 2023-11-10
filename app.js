@@ -12,7 +12,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: ["https://web-tp2-frontend-git-main-feisty-goose.vercel.app"],
+    origin: ["*"],
     methods: ["GET", "POST", "DELETE"],
     credentials: true,
   })
