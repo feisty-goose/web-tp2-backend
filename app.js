@@ -51,8 +51,32 @@ con.connect(function (err) {
   console.log("connected");
 });
 
+app.get("/getStats", (req, res) => {
+  let stats = [0, 0];
+
+  con.query("SELECT COUNT(*) FROM events", function (err, result, fields) {
+    if (err) {
+      throw err;
+    } else {
+      stats[0] = result;
+    }
+  });
+
+  con.query("SELECT COUNT(*) FROM users", function (err, result, fields) {
+    if (err) {
+      throw err;
+    } else {
+      stats[1] = result;
+    }
+  });
+
+  res.json({ response: stats });
+});
+
 app.get("/getAllEvents", (req, res) => {
-  const userId = req.body.userId;
+  const userId = req.query.userId;
+
+  if (userId === "") return;
 
   con.query(
     "SELECT * FROM events WHERE user_id = ?;",
@@ -61,7 +85,7 @@ app.get("/getAllEvents", (req, res) => {
       if (err) {
         throw err;
       } else {
-        res.json({ response: result });
+        res.json(result);
       }
     }
   );
@@ -70,6 +94,7 @@ app.get("/getAllEvents", (req, res) => {
 app.delete("/deleteEvent", (req, res) => {
   let id = req.body.id;
 
+  console.log(id);
   if (id === undefined) return;
 
   con.query("DELETE FROM events WHERE id = ?;", [id], function (err, result) {
@@ -106,24 +131,30 @@ app.post("/addEvent", async (req, res) => {
 });
 
 app.post("/signUp", async (req, res) => {
-  let name = req.body.name;
+  let username = req.body.username;
   let password = req.body.rawPassword;
 
-  if (name === undefined) return;
-  if (password === undefined) return;
+  if (username === undefined) {
+    res.json({ errMessage: "Invalid username" });
+    return;
+  }
+  if (password === undefined) {
+    res.json({ errMessage: "Invalid password" });
+    return;
+  }
 
   let salt = await bcrypt.genSalt(10);
   password = await bcrypt.hash(password, salt);
 
   con.query(
     "INSERT INTO users (name, password) VALUES ( ?, ? );",
-    [name, password],
+    [username, password],
     function (err, result, fields) {
       if (!err) {
         result = result.affectedRows > 0 ? "Success" : "Failure";
         res.json({ response: result });
       } else if (err.code === "ER_DUP_ENTRY") {
-        res.json({ response: "User already exists" });
+        res.json({ errMessage: "User already exists" });
       } else {
         throw err;
       }
@@ -141,8 +172,7 @@ app.get("/login", (req, res) => {
 
 app.post("/logIn", (req, res) => {
   const username = req.body.username;
-  const password = req.body.password;
-  console.log(username + " " + password);
+  const password = req.body.rawPassword;
 
   con.query(
     "SELECT * FROM users WHERE name = ?;",
@@ -150,7 +180,6 @@ app.post("/logIn", (req, res) => {
     function (err, result, fields) {
       if (err) {
         throw err;
-      } else {
       }
 
       if (result.length > 0) {
@@ -163,9 +192,9 @@ app.post("/logIn", (req, res) => {
             console.log(req.session);
             req.session.user = result;
             console.log("result", result);
-            res.send(result);
+            res.send({ id: result[0].id, name: result[0].name });
           } else {
-            res.send({ message: "Wrong username/password combination!" });
+            res.send({ message: "Wrong username/password combination" });
           }
         });
       } else {
